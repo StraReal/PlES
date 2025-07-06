@@ -6,7 +6,8 @@ class Sim:
     def __init__(self,_wW,_wH,_timeRate,_worldType,_worldInfo=(None,None)):
         self.wW=_wW
         self.wH=_wH
-        self.env = Env(self.wW, self.wH, _worldType,_worldInfo[0],_worldInfo[1])
+        print(_worldType,_worldInfo[0],_worldInfo[1])
+        self.env = Env(self.wW, self.wH, _worldType,_worldInfo[1],_worldInfo[0])
         self.timerate=_timeRate
         self.frame=0
         self.mHour=72
@@ -28,6 +29,7 @@ class Sim:
         item = {
             "seed": self.env.seed,
             "octaves": self.env.octaves,
+            "world_type": self.env.world_type
         }
 
         with open(filepath, "w") as f:

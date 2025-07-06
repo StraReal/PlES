@@ -1,4 +1,4 @@
-import pygame,time,os
+import pygame,time,os,json
 clock=pygame.time.Clock()
 FONTPATH_DIR = "assets/font"
 def get_font_list():
@@ -38,7 +38,9 @@ class UI:
         pygame.font.init()
         self.font = pygame.font.Font(FONTPATH, 21)
         self.selected_option = None
-        self.world_types = ["Continental", "Archipelago", "Island", "Desert"]
+        self.worlds_folder= "worlds"
+        self.world_types = ["Continental", "Archipelago"]
+        self.saved_worlds = [f for f in os.listdir(self.worlds_folder) if f.endswith(".json") and os.path.isfile(os.path.join(self.worlds_folder, f))]
         self.world_type_index = 0
         self.menufont = pygame.font.Font(FONTPATH, 40)
         pygame.init()
@@ -81,25 +83,49 @@ class UI:
         pygame.draw.rect(self.screen, BUTTONCOLOR if self.chButton != 3 else (19, 109, 21), rectPlaceholder,
                          border_radius=10)
         font = self.menufont
-        self.screen.blit(font.render("Crea nuovo mondo", True, TEXTCOLOR if self.chButton != 1 else (255,255,255)),
-                         (rectCreate.centerx - 150, rectCreate.centery - 24))
-        self.screen.blit(font.render("Carica mondo", True, TEXTCOLOR if self.chButton != 2 else (255,255,255)),
-                         (rectLoad.centerx - 120, rectLoad.centery - 24))
-        self.screen.blit(font.render("Coming soon...", True, TEXTCOLOR if self.chButton != 3 else (255,255,255)),
-                         (rectPlaceholder.centerx - 140, rectPlaceholder.centery - 24))
+        text1 = font.render("Crea nuovo mondo" if self.chButton != 1 else self.world_types[self.world_type_index], True, TEXTCOLOR if self.chButton != 1 else (255,255,255))
+        text1_rect = text1.get_rect(center=rectCreate.center)
+        self.screen.blit(text1, text1_rect)
+        text2 = font.render("Carica mondo"if self.chButton != 2 else self.saved_worlds[self.world_type_index], True, TEXTCOLOR if self.chButton != 2 else (255,255,255))
+        text2_rect = text2.get_rect(center=rectLoad.center)
+        self.screen.blit(text2, text2_rect)
+        text3 = font.render("Coming soon...", True, TEXTCOLOR if self.chButton != 3 else (255,255,255))
+        text3_rect = text3.get_rect(center=rectPlaceholder.center)
+        self.screen.blit(text3, text3_rect)
+        lArRect = pygame.Rect(self.screenW / 2 - 375 + 10, 350 + 35 if self.chButton==1 else (self.screenH - 400 + 300) / 2 + 85, 30, 30)
+        rArRect = pygame.Rect(self.screenW / 2 - 375 + 710, 350 + 35 if self.chButton==1 else (self.screenH - 400 + 300) / 2 + 85, 30, 30)
+        if self.chButton!=0:
+            pygame.draw.rect(self.screen, (200,200,200), lArRect, border_radius=3)
+            pygame.draw.rect(self.screen, (200, 200, 200), rArRect, border_radius=3)
         mousePos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()[0]
         just_clicked = mouse_click and not self.prev_mouse_click
         self.prev_mouse_click = mouse_click
         if just_clicked:
-            if rectCreate.collidepoint(mousePos):
+            if rArRect.collidepoint(mousePos):
+                if self.chButton!=0:
+                    if self.world_type_index+1!=len(self.world_types if self.chButton==1 else self.saved_worlds):
+                        self.world_type_index+=1
+                    else:
+                        self.world_type_index=0
+            elif lArRect.collidepoint(mousePos):
+                if self.chButton!=0:
+                    if self.world_type_index!=0:
+                        self.world_type_index-=1
+                    else:
+                        self.world_type_index=len(self.world_types if self.chButton==1 else self.saved_worlds)-1
+            elif rectCreate.collidepoint(mousePos):
                 if self.chButton:
-                    return 'create_world', self.world_types[self.world_type_index]
+                    return 'create_world', self.world_types[self.world_type_index], (None,None)
                 else:
                     self.chButton = 1
             elif rectLoad.collidepoint(mousePos):
                 if self.chButton:
-                    return 'load_world', 'your_world_type'
+                    filename = self.saved_worlds[self.world_type_index]
+                    filepath = os.path.join(self.worlds_folder, filename)
+                    with open(filepath, 'r') as f:
+                        data = json.load(f)
+                    return 'load_world', data['world_type'],[data['octaves'],data['seed']]
                 else:
                     self.chButton = 2
             elif rectPlaceholder.collidepoint(mousePos):
@@ -117,7 +143,7 @@ class UI:
             text = types_font.render(current_type, True, (0, 0, 0))
             self.screen.blit(text, text.get_rect(center=(center_x, y)))
         pygame.display.flip()
-        return None, None
+        return None, None, (None,None)
 
     def detectMouseMotion(self):
         mousePos = pygame.mouse.get_pos()

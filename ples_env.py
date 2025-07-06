@@ -18,9 +18,10 @@ class Env:
         self.gWetness = 0
         self.octaves:int=_octaves if _octaves else 8
         self.seed: int = _seed if _seed else random.randint(1, 10 ** 5)
-        if _worldType=='Archipelago':
-            self.limits = [-0.1, -0.05, 0.35]
-        elif _worldType == 'Continental':
+        self.world_type=_worldType
+        if self.world_type=='Archipelago':
+            self.limits = [0, 0.1, 0.35]
+        elif self.world_type == 'Continental':
             self.limits = [-0.2, -0.1, 0.35]
         else:
             self.limits = [-0.2, -0.1, 0.35]
