@@ -1,6 +1,16 @@
-import pygame,time
+import pygame,time,os
 clock=pygame.time.Clock()
-FONTPATH="assets/Overpass-Regular.ttf"
+FONTPATH_DIR = "assets/font"
+def get_font_list():
+    return [os.path.join(FONTPATH_DIR, f)
+            for f in os.listdir(FONTPATH_DIR)
+            if f.lower().endswith((".ttf", ".otf"))]
+font_list = get_font_list()
+if font_list:
+    FONTPATH = font_list[0]
+else:
+    raise FileNotFoundError("Nessun font trovato nella cartella assets/font")
+
 def squashTowardsZero(x, factor=4):
     return x**factor
 def mapValue(value, min_val, max_val, oMin_val=0.0, oMax_val=1.0):
