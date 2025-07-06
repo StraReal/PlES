@@ -237,6 +237,7 @@ class UI:
         text_rect = text_surface.get_rect()
         text_rect.topleft = (70, 10)
         self.screen.blit(text_surface, text_rect)
+        self.screen.blit(self.RSaveFile, (self.screenW - 40, self.screenH - 40))
         if self.selected_plant is not None:
             #print(self.selected_plant.rootDepth, self.selected_plant.wet)
             self.doNothing()
