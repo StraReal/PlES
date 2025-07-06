@@ -331,6 +331,8 @@ class UI:
         mouse_click = pygame.mouse.get_pressed()[0]
         mouse_pos = pygame.mouse.get_pos()
         if mouse_click and not self.prev_mouse_click:
+            if self.rect_savefile.collidepoint(mouse_pos):
+                self.sim.save_world()
             for plant in self.plants or []:
                 px = plant.x * self.cell_width + self.sBarW
                 py = plant.y * self.cell_height + self.sBarH

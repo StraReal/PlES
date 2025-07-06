@@ -23,7 +23,6 @@ class Plant:
         if self.stress > self.behaviours["Thresholds"]["Stress"]:
             print(f'Plant {self.id} died')
             return False
-        print(self.stress,self.behaviours["Thresholds"]["Stress"])
         return True
 
     def onDry(self):

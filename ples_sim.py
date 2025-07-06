@@ -1,7 +1,7 @@
 from ples_env import Env
 from ples_plants import Plant
-import json
-file_mondo="world.json"
+import json,os
+world_folder="worlds"
 class Sim:
     def __init__(self,_wW,_wH,_timeRate,_worldType,_worldInfo=(None,None)):
         self.wW=_wW
@@ -16,17 +16,24 @@ class Sim:
         self.updateTime()
         self.env.plants = [Plant for Plant in self.env.plants if Plant.update()]
 
-    def salva_mondo(self):
+    def save_world(self):
+        folder = "worlds"
+        os.makedirs(folder, exist_ok=True)
+        i = 1
+        while os.path.exists(os.path.join(folder, f"world{i}.json")):
+            i += 1
+
+        filepath = os.path.join(folder, f"world{i}.json")
+
         item = {
             "seed": self.env.seed,
             "octaves": self.env.octaves,
         }
 
-        with open(file_mondo, "w") as f:
+        with open(filepath, "w") as f:
             json.dump(item, f, indent=2)
 
-        print(f"Mondo salvato con successo in {file_mondo}")
-
+        print(f"Succesfully saved world to {filepath}")
 
     def updateTime(self):
         self.frame+=1
