@@ -12,10 +12,12 @@ def squashTowardsZero(x, factor=4):
     return x**factor
 
 class Env:
-    def __init__(self, _wW, _wH, _worldType):
+    def __init__(self, _wW, _wH, _worldType, _seed,_octaves):
         self.width = _wW
         self.height = _wH
         self.gWetness = 0
+        self.octaves:int=_octaves if _octaves else 8
+        self.seed: int = _seed if _seed else random.randint(1, 10 ** 5)
         if _worldType=='Archipelago':
             self.limits = [-0.1, -0.05, 0.35]
         elif _worldType == 'Continental':
@@ -26,12 +28,11 @@ class Env:
         self.luminosity = 1.0
 
     def generateEnvironment(self):
-        noise = PerlinNoise(octaves=8)
+        noise = PerlinNoise(self.octaves, self.seed)
         noise_map = [
             [noise([x / self.width, y / self.height]) for x in range(self.width*3)]
             for y in range(self.height)
         ]
-
         cells=[]
         for y in range(self.height):
             row = []

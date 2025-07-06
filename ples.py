@@ -12,6 +12,9 @@ while choice is None and worldType is None:
 if choice=='create_world':
     sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType=worldType)
     ui = UI(sim, sim.env.cells, sim.env.plants, sim.wW, sim.wH, _sW=1500, _sH=999, _worldType=worldType)
+elif choice=='load_world':
+    sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType=worldType)
+    ui = UI(sim, sim.env.cells, sim.env.plants, sim.wW, sim.wH, _sW=1500, _sH=999, _worldType=worldType)
 else:
     print('Not Create World')
     sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType='continental')
