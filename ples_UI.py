@@ -1,6 +1,6 @@
 import pygame,time
 clock=pygame.time.Clock()
-FONTPATH="C:/Users/agtor/AppDatA/Local/Microsoft/Overpass-Regular.ttf"
+FONTPATH="assets/Overpass-Regular.ttf"
 def squashTowardsZero(x, factor=4):
     return x**factor
 def mapValue(value, min_val, max_val, oMin_val=0.0, oMax_val=1.0):
@@ -37,6 +37,9 @@ class UI:
         self.sBarW,self.sBarH=(self.screenW-self.swW)//2,(self.screenH-self.swH)//2
         self.chButton=0
         self.selected_plant = None
+        self.SaveFile = pygame.image.load("assets/SaveFile.png").convert_alpha()
+        self.RSaveFile = pygame.transform.scale(self.SaveFile, (35, 35))
+        self.rect_savefile = pygame.Rect(self.screenW - 40, self.screenH - 40, 35, 35)
         pygame.display.set_caption("PlES")
         if self.sim is not None:
             self.plants=self.sim.env.plants
@@ -293,7 +296,7 @@ class UI:
 
     def update(self):
         self.plants = self.sim.env.plants
-        self.handlePlantClick()
+        self.handleClick()
         self.sim.updateLuminosity(self.luminosity)
         self.screen.fill(self.interpolateColor(self.light, (255,255,255),0.2))
         if self.mapToShow==0:
@@ -313,7 +316,7 @@ class UI:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
 
-    def handlePlantClick(self):
+    def handleClick(self):
         mouse_click = pygame.mouse.get_pressed()[0]
         mouse_pos = pygame.mouse.get_pos()
         if mouse_click and not self.prev_mouse_click:
