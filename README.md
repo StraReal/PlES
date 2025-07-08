@@ -12,3 +12,9 @@ A Pygame-based wannabe Plant Evolution Simulator (PlES)
 
 The worlds are easily recreatable thanks to the simplicity of their generation:
 they use a seed for the Perlin Noise map and a World Type which determines specifics that can make the world look different ways with the same seed.
+
+Dependencies:
+
+-The worlds folder: even if you're not going to save and load worlds, the code will not work without it.
+-The assets folder and the SaveFile.png
+-The font folder and a font inside of it
