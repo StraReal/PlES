@@ -9,7 +9,7 @@ font_list = get_font_list()
 if font_list:
     FONTPATH = font_list[0]
 else:
-    raise FileNotFoundError("Nessun font trovato nella cartella assets/font")
+    raise FileNotFoundError(f"No font found in {FONTPATH_DIR}")
 
 def squashTowardsZero(x, factor=4):
     return x**factor
@@ -83,10 +83,10 @@ class UI:
         pygame.draw.rect(self.screen, BUTTONCOLOR if self.chButton != 3 else (19, 109, 21), rectPlaceholder,
                          border_radius=10)
         font = self.menufont
-        text1 = font.render("Crea nuovo mondo" if self.chButton != 1 else self.world_types[self.world_type_index], True, TEXTCOLOR if self.chButton != 1 else (255,255,255))
+        text1 = font.render("Create new world" if self.chButton != 1 else self.world_types[self.world_type_index], True, TEXTCOLOR if self.chButton != 1 else (255,255,255))
         text1_rect = text1.get_rect(center=rectCreate.center)
         self.screen.blit(text1, text1_rect)
-        text2 = font.render("Carica mondo"if self.chButton != 2 else self.saved_worlds[self.world_type_index], True, TEXTCOLOR if self.chButton != 2 else (255,255,255))
+        text2 = font.render("Load world"if self.chButton != 2 else self.saved_worlds[self.world_type_index], True, TEXTCOLOR if self.chButton != 2 else (255,255,255))
         text2_rect = text2.get_rect(center=rectLoad.center)
         self.screen.blit(text2, text2_rect)
         text3 = font.render("Coming soon...", True, TEXTCOLOR if self.chButton != 3 else (255,255,255))
@@ -206,15 +206,15 @@ class UI:
         sabbia = (203, 189, 147)
         montagna=(100,100,100)
         tipo = cell["type"]
-        if tipo == "terra":
+        if tipo == "dirt":
             color = terra
-        elif tipo== 'terraErba':
+        elif tipo== 'grassyDirt':
             color=erba
-        elif tipo == "acqua":
+        elif tipo == "water":
             color=acqua
-        elif tipo == "sabbia":
+        elif tipo == "sand":
             color = sabbia
-        elif tipo == "montagna":
+        elif tipo == "mountain":
             color = montagna
         else:
             color = (0, 0, 0)

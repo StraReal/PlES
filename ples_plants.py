@@ -1,17 +1,29 @@
 import copy
 import random
+
+
+def mutate(behaviour):
+    d_m = behaviour.copy()
+    for k, v in d_m.items():
+        if isinstance(v, float):
+            d_m[k] = v + random.random()
+        elif isinstance(v, dict):
+            d_m[k] = mutate(v)
+    return d_m
 class Plant:
-    def __init__(self, x, y, type, height, cellHeight, undergroundWater, temp, id, rootDepth, water, behaviours):
+    def __init__(self, x, y, behaviours, world, starter=False):
         self.x = x
         self.y = y
-        self.gType = type
-        self.temp = temp
         self.id = id
-        self.height = height
-        self.cHeight = cellHeight
-        self.UGW = undergroundWater
-        self.rootDepth = rootDepth
-        self.wet = water
+        self.wet = 1 if starter else 0.5
+        self.world=world
+        cell = self.world[y][x]
+        self.type = cell["type"]
+        self.temp = cell["temperature"]
+        self.UGW = cell["waterUnder"]
+        self.cHeight = cell["height"]
+        self.height = random.random() * 3 if starter else 0.1
+        self.rootDepth = random.random() if starter else 0
         self.behaviours = behaviours
         self.stress = 0.0
 
@@ -39,19 +51,12 @@ class Plant:
         num_seeds = random.randint(3, 7)
 
         for _ in range(num_seeds):
-            new_behaviours = self.mutate_behaviour(copy.deepcopy(self.behaviours))
+            new_behaviours = mutate(self.behaviours)
             dx = random.randint(-50, 50)
             dy = random.randint(-50, 50)
             new_x = max(0,self.x + dx)
             new_y = max(0,self.y + dy)
-
-            seed = Plant(new_x, new_y, behaviours=new_behaviours, is_seed=True)
+            seed = Plant(new_x, new_y,new_behaviours,self.world)
             seeds.append(seed)
 
         return seeds
-
-    def mutate_behaviour(self, behaviour):
-        for key in behaviour:
-            if isinstance(behaviour[key], (int, float)):
-                behaviour[key] *= random.uniform(0.95, 1.05)
-        return behaviour

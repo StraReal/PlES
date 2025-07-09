@@ -55,12 +55,6 @@ class Env:
         for i in range(10):
             x=random.randint(0,self.width-1)
             y=random.randint(0,self.height-1)
-            cell=cells[y][x]
-            tipo=cell["type"]
-            temp=cell["temperature"]
-            UGW=cell["waterUnder"]
-            cHeight=cell["height"]
-            height=random.random()*3
             behaviours={
                 "Thresholds":{
                     "Water":random.random(),
@@ -73,21 +67,21 @@ class Env:
                     "deepening": (random.random()-1)/10
                 }
             }
-            plants.append(Plant(x,y,tipo,height,cHeight,UGW,temp,i,0.5,1,behaviours))
+            plants.append(Plant(x,y,behaviours, cells, starter=True))
         return cells, plants
 
     def getCellType(self, value, temp):
         if value < self.limits[0]:
-            return "acqua"
+            return "water"
         elif value < self.limits[1]:
-            return "sabbia"
+            return "sand"
         elif value < self.limits[2]:
             if temp<-0.2:
-                return "terra"
+                return "dirt"
             else:
-                return "terraErba"
+                return "grassyDirt"
         else:
-            return "montagna"
+            return "mountain"
 
     def updateLuminosity(self, luminosity):
         self.luminosity = luminosity
