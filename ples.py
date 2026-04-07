@@ -1,32 +1,36 @@
+import pygame
+
 from ples_UI import UI
 from ples_sim import Sim
 import time
 
 ui = UI()
-choice, worldType,worldInfo = None, None,None
-while choice is None and worldType is None:
-    ui.detectEvents()
-    choice, worldType, worldInfo = ui.drawMainMenu()
+choice, world_type, world_info = None, None,None
+while choice is None and world_type is None:
+    ui.detect_events()
+    choice, world_type, world_info = ui.draw_main_menu()
     time.sleep(0.01)
 
 if choice=='create_world':
-    sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType=worldType)
-    ui = UI(sim, sim.env.cells, sim.env.plants, sim.wW, sim.wH, _sW=1500, _sH=999, _worldType=worldType)
+    sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType=world_type)
+    ui = UI(sim, sim.env.cells, sim.env.plants, sim.wW, sim.wH, _sW=1500, _sH=999, _worldType=world_type)
 elif choice=='load_world':
-    print(worldType,worldInfo)
-    sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType=worldType,_worldInfo=(worldInfo))
-    ui = UI(sim, sim.env.cells, sim.env.plants, sim.wW, sim.wH, _sW=1500, _sH=999, _worldType=worldType)
+    print(world_type, world_info)
+    sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType=world_type,_worldInfo=world_info)
+    ui = UI(sim, sim.env.cells, sim.env.plants, sim.wW, sim.wH, _sW=1500, _sH=999, _worldType=world_type)
 else:
     print('Not Create World')
     sim = Sim(_wW=500, _wH=333, _timeRate=1.0, _worldType='continental')
     ui = UI(sim, sim.env.cells, sim.env.plants,sim.wW, sim.wH, _sW=1500, _sH=999, _worldType='continental')
 
 try:
+    clock = pygame.time.Clock()
     while True:
         start_time = time.perf_counter()
-        ui.detectEvents()
+        ui.detect_events()
         sim.run()
         ui.update()
         elapsed_time = (time.perf_counter() - start_time) * 1000
+        clock.tick(60)
 except KeyboardInterrupt:
-    print("Uscita con Ctrl+C")
+    print("Quit with Ctrl+C")
