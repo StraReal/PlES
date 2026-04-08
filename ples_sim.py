@@ -1,8 +1,8 @@
 import random
-
 from ples_env import Env
-from ples_plants import Plant
 import json,os
+from collections import deque
+
 world_folder="worlds"
 class Sim:
     def __init__(self,_wW,_wH,_timeRate,_worldType,_worldInfo=(None,None)):
@@ -18,11 +18,12 @@ class Sim:
         self.light, self.l_strength = self.get_sky_color(self.time)
         self.l_strength = self.l_strength / 2
         self.luminosity = self.rgb_into_luminosity(self.light)
+        self.plant_id_counts = {}
+        self.population_history = deque(maxlen=100)
+        self.active_events = {}
 
     @staticmethod
     def interpolate_color(color1, color2, t):
-        if t>1:
-            print(t)
         return tuple(
             int(color1[i] + (color2[i] - color1[i]) * t)
             for i in range(3)
@@ -66,20 +67,38 @@ class Sim:
         self.env.update_luminosity(self.luminosity)
         l = int(self.env.width * self.env.height * 0.05)
         positions = [(random.randint(0, self.env.width - 1), random.randint(0, self.env.height - 1)) for _ in range(l)]
-        self.env.random_tick(positions)
+        self.tick_events()
+        self.env.random_tick(positions, self.active_events)
+        if not self.time % 10:
+            self.plant_id_counts = {}
+            for plant in self.env.plants:
+                if plant.fam_id in self.plant_id_counts:
+                    self.plant_id_counts[plant.fam_id] += 1
+                else:
+                    self.plant_id_counts[plant.fam_id] = 1
+            self.population_history.append(self.plant_id_counts.copy())
         self.time += 1
         self.day = self.time % 480
-        alive = []
-        new_plants = []
-        for plant in self.env.plants:
-            if plant.update(self.luminosity):
-                alive.append(plant)
-                if random.random() < 0.001:
-                    new_plants.extend(plant.produce_seeds())
-        for seed in new_plants:
-            if 0 <= seed.x < self.wW and 0 <= seed.y < self.wH:
-                alive.append(seed)
-        self.env.plants = alive
+
+    def tick_events(self):
+        # trigger events randomly
+        if "rain" not in self.active_events and random.random() < 0.01:
+            duration = random.randint(200, 800)
+            self.active_events["rain"] = duration
+            print(f"Rain started, lasting {duration} ticks")
+
+        if "heatwave" not in self.active_events and "rain" not in self.active_events:
+            if random.random() < 0.0005:
+                duration = random.randint(300, 1000)
+                self.active_events["heatwave"] = duration
+                print(f"Heatwave started, lasting {duration} ticks")
+
+        #tick down active events
+        for event in list(self.active_events):
+            self.active_events[event] -= 1
+            if self.active_events[event] <= 0:
+                print(f"{event} ended")
+                del self.active_events[event]
 
     def save_world(self):
         folder = "worlds"

@@ -18,13 +18,15 @@ class Env:
         self.octaves:int=_octaves if _octaves else 8
         self.seed: int = _seed if _seed else random.randint(1, 10 ** 5)
         self.world_type=_worldType
+        self.plant_id = 0
         if self.world_type=='Archipelago':
             self.limits = [0, 0.1, 0.35]
         elif self.world_type == 'Continental':
             self.limits = [-0.2, -0.1, 0.35]
         else:
             self.limits = [-0.2, -0.1, 0.35]
-        self.cells, self.plants = self.generate_environment()
+        self.cells = self.generate_environment()
+        self.plants = []
         self.luminosity = 1.0
 
     def generate_environment(self):
@@ -52,6 +54,7 @@ class Env:
                 cell = {
                     "type": cell_type,
                     "temperature": temperature,
+                    "tempDrift": 0.0,
                     "height": height,
                     "waterUnder": water_under,
                     "grass": grass
@@ -59,16 +62,15 @@ class Env:
                 row.append(cell)
             cells.append(row)
 
-        plants=[]
-        for i in range(10):
-            plants.append(self.create_plant(world=cells))
-        return cells, plants
+        return cells
 
     def create_plant(self, x=None, y=None, world=None, add_to_world=False):
         if x is None:
             x = random.randint(0, self.width - 1)
         if y is None:
             y = random.randint(0, self.height - 1)
+        if self.cells[y][x]["type"] == "water":
+            return None
         if world is None:
             world = self.cells
         behaviours = {
@@ -86,9 +88,11 @@ class Env:
                 "WaterTolerance": random.uniform(0.1, 0.4),
             }
         }
-        p = Plant(x, y, behaviours, world, starter=True)
+        p = Plant(x, y, behaviours, world, starter=True, species=self.plant_id)
+        self.plant_id += 1
         if add_to_world:
             self.plants.append(p)
+            p.add_to_founders()
         return p
 
     def get_cell_type(self, value, temp):
@@ -104,13 +108,30 @@ class Env:
     def update_luminosity(self, luminosity):
         self.luminosity = luminosity
 
-    def random_tick(self, positions):
+    def random_tick(self, positions, active_events):
+        if active_events is None:
+            active_events = {}
+
+        rain = "rain" in active_events
+        heatwave = "heatwave" in active_events
+
         for x, y in positions:
             cell = self.cells[y][x]
 
             base_rate = RECHARGE_RATES.get(cell["type"], 0.001)
-            temp_factor = max(0.0, 1.0 - ((cell["temperature"] - OPTIMAL_TEMP) ** 2) * 2)
-            cell["waterUnder"] = min(1.0, cell["waterUnder"] + base_rate * temp_factor * 10)
+            temp_factor = max(0.0, 1.0 - ((cell["temperature"]+cell["tempDrift"] - OPTIMAL_TEMP) ** 2) * 2)
+            recharge = base_rate * temp_factor * 10
+
+            if rain:
+                recharge *= 4.0
+                cell["tempDrift"] = cell["tempDrift"] - 0.002
+            elif heatwave:
+                recharge *= 0.3
+                cell["tempDrift"] = cell["tempDrift"] + 0.003
+            cell["tempDrift"] = cell["tempDrift"] * 0.98
+
+
+            cell["waterUnder"] = min(1.0, cell["waterUnder"] + recharge)
 
             if cell["grass"] and (random.uniform(0, cell["waterUnder"]) > 0.3 or random.random() > 0.99) and (random.uniform(0, self.luminosity) > 0.2):
                 exx = random.randint(-1, 1)
@@ -122,3 +143,20 @@ class Env:
                     self.cells[ny][nx]["grass"] = True
                 if random.random() < 0.0001:
                     self.create_plant(x=x, y=y, add_to_world=True)
+
+        new_plants = []
+
+        tick_plants = random.sample(self.plants, len(self.plants) // 5)
+        tick_set = set(id(p) for p in tick_plants)
+        alive = [p for p in self.plants if id(p) not in tick_set]
+        for plant in tick_plants:
+            if plant.update(self.luminosity, tick_rate=4.5):
+                alive.append(plant)
+                if random.random() < 0.001:
+                    new_plants.extend(plant.produce_seeds())
+
+        for seed in new_plants:
+            if 0 <= seed.x < self.width and 0 <= seed.y < self.height:
+                alive.append(seed)
+
+        self.plants = alive
