@@ -114,6 +114,7 @@ class Env:
 
         rain = "rain" in active_events
         heatwave = "heatwave" in active_events
+        glaciation = "glaciation" in active_events
 
         for x, y in positions:
             cell = self.cells[y][x]
@@ -125,9 +126,12 @@ class Env:
             if rain:
                 recharge *= 4.0
                 cell["tempDrift"] = cell["tempDrift"] - 0.002
-            elif heatwave:
+            if heatwave:
                 recharge *= 0.3
                 cell["tempDrift"] = cell["tempDrift"] + 0.003
+            if glaciation:
+                recharge *= 0.7
+                cell["tempDrift"] = cell["tempDrift"] - 0.006
             cell["tempDrift"] = cell["tempDrift"] * 0.98
 
 

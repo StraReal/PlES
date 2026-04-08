@@ -1,4 +1,3 @@
-import copy
 import random
 
 def mutate(behaviour):

@@ -5,16 +5,14 @@ from collections import deque
 
 world_folder="worlds"
 class Sim:
-    def __init__(self,_wW,_wH,_timeRate,_worldType,_worldInfo=(None,None)):
-        self.wW=_wW
-        self.wH=_wH
-        print(_worldType,_worldInfo[0],_worldInfo[1])
-        self.env = Env(self.wW, self.wH, _worldType,_worldInfo[1],_worldInfo[0])
-        self.timerate=_timeRate
+    def __init__(self,_world_w,_world_h,_world_type,_world_info=(None,None)):
+        self.world_w=_world_w
+        self.world_h=_world_h
+        self.env = Env(self.world_w, self.world_h, _world_type,_world_info[1],_world_info[0])
         self.frame=0
         self.time = 72
         self.day = 0
-        self.worldType=_worldType
+        self.worldType=_world_type
         self.light, self.l_strength = self.get_sky_color(self.time)
         self.l_strength = self.l_strength / 2
         self.luminosity = self.rgb_into_luminosity(self.light)
@@ -82,14 +80,18 @@ class Sim:
 
     def tick_events(self):
         # trigger events randomly
-        if "rain" not in self.active_events and random.random() < 0.01:
+        if not any(e in self.active_events for e in "rain") and random.random() < 0.001:
             duration = random.randint(200, 800)
             self.active_events["rain"] = duration
             print(f"Rain started, lasting {duration} ticks")
 
-        if "heatwave" not in self.active_events and "rain" not in self.active_events:
-            if random.random() < 0.0005:
+        if not any(e in self.active_events for e in ("glaciation", "heatwave", "rain")) and random.random() < 0.0005:
                 duration = random.randint(300, 1000)
+                self.active_events["heatwave"] = duration
+                print(f"Heatwave started, lasting {duration} ticks")
+
+        if not any(e in self.active_events for e in ("glaciation", "heatwave", "rain")) and random.random() < 0.0001:
+                duration = random.randint(3500, 8000)
                 self.active_events["heatwave"] = duration
                 print(f"Heatwave started, lasting {duration} ticks")
 

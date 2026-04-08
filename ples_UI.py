@@ -1,9 +1,7 @@
-import math
 import random
 import sys
-from collections import Counter
 import numpy as np
-import pygame,time,os,json
+import pygame,os,json
 from scipy.spatial import KDTree
 
 def unpair(z):
@@ -13,26 +11,18 @@ def unpair(z):
     a = w - b
     return a, b
 
-def map_value(value, min_val, max_val, original_min_val=0.0, original_max_val=1.0):
-    if original_max_val == original_min_val:
-        raise ValueError("Invalid interval: range can't be zero.")
-    t = (value - original_min_val) / (original_max_val - original_min_val)
-    mapped_val = t * (max_val - min_val) + min_val
-    return mapped_val
-
-def squash_towards_zero(x, factor=4):
-    return x**factor
 class UI:
-    def __init__(self,sim=None,cells=None, plants=None,wW=1, wH=1,_sW=1,_sH=1,_worldType=None):
+    def __init__(self, sim=None, env_width=1, env_height=1,_s_w=1,_s_h=1,_world_type=None):
         self.sim=sim
-        self.cells = cells
-        self.rows = wH
-        self.cols = wW
-        self.swW=_sW
-        self.swH=_sH
-        self.cell_width = _sW // self.cols
-        self.cell_height = _sH // self.rows
-        self.worldType=_worldType
+        if sim is not None:
+            self.cells = sim.env.cells
+        self.rows = env_height
+        self.cols = env_width
+        self.env_window_width=_s_w
+        self.env_window_height=_s_h
+        self.cell_width = _s_w // self.cols
+        self.cell_height = _s_h // self.rows
+        self.worldType=_world_type
         self.selected_option = None
         self.worlds_folder= "worlds"
         self.world_types = ["Continental", "Archipelago"]
@@ -44,7 +34,7 @@ class UI:
         self.big_font = pygame.font.Font("assets/font/ari-w9500-bold.ttf", 44)
         self.screen_w,self.screen_h=self.get_screen_sizes()
         self.screen = pygame.display.set_mode((self.screen_w, self.screen_h))
-        self.sidebar_w ,self.sidebar_h = (self.screen_w-self.swW)//2, (self.screen_h-self.swH)//2
+        self.sidebar_w ,self.sidebar_h = (self.screen_w-self.env_window_width)//2, (self.screen_h-self.env_window_height)//2
 
         self.chButton=0
         self.selected_plant = None
@@ -209,8 +199,8 @@ class UI:
         pixel_colors = color_map[indices].reshape(self.sim.env.height, self.sim.env.width, 3)
 
         surface = pygame.surfarray.make_surface(pixel_colors.transpose(1, 0, 2))
-        surface = pygame.transform.scale(surface, (self.swW, self.swH))
-        surface.set_alpha(178)
+        surface = pygame.transform.scale(surface, (self.env_window_width, self.env_window_height))
+        surface.set_alpha(123)
         self.screen.blit(surface, (self.sidebar_w, self.sidebar_h))
 
     def draw_plants(self):
@@ -430,15 +420,18 @@ class UI:
         day = self.sim.time // 480
         hour = self.sim.time % 480 * 3 // 60
         minute = self.sim.time * 3 % 60
-        text_surface = self.font.render(f"{hour}:{minute:02d}", True, (255, 255, 255))
+
+        text_surface = self.font.render(f"{hour}:{minute:02d}  Day {day}", True, (255, 255, 255))
         text_rect = text_surface.get_rect()
         text_rect.topleft = (10, 10)
         self.screen.blit(text_surface, text_rect)
 
-        text_surface = self.font.render(f"Day {day}", True, (255, 255, 255))
-        text_rect = text_surface.get_rect()
-        text_rect.topleft = (70, 10)
-        self.screen.blit(text_surface, text_rect)
+        if self.sim.active_events:
+            text = " - ".join(self.sim.active_events.keys())
+            text_surface = self.font.render(text, True, (255, 255, 255))
+            text_rect = text_surface.get_rect()
+            text_rect.bottomleft = (10, self.screen_h-10)
+            self.screen.blit(text_surface, text_rect)
 
         self.screen.blit(self.savefile_img, (self.screen_w - 40, self.screen_h - 40))
 
@@ -482,17 +475,18 @@ class UI:
 
     def draw_global_light(self, light_color, strength=0.5):
         alpha = int(255 * strength)
-        overlay = pygame.Surface((self.swW, self.swH), pygame.SRCALPHA)
+        overlay = pygame.Surface((self.env_window_width, self.env_window_height), pygame.SRCALPHA)
         overlay.fill((*light_color, alpha))
         self.screen.blit(overlay, (self.sidebar_w, self.sidebar_h))
 
     def update(self):
-        self.screen.fill(self.sim.interpolate_color(self.sim.light, (255,255,255),0.2))
-        self.draw_world()
-        if self.map_type==1:
-            self.draw_family_map()
-        self.draw_side_menu()
-        pygame.display.flip()
+        if self.sim is not None:
+            self.screen.fill(self.sim.interpolate_color(self.sim.light, (255,255,255),0.2))
+            self.draw_world()
+            if self.map_type==1:
+                self.draw_family_map()
+            self.draw_side_menu()
+            pygame.display.flip()
 
     def detect_events(self):
         for event in pygame.event.get():
