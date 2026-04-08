@@ -51,6 +51,8 @@ class UI:
         self.family_first_seen = {}
         self.family_order = []
         self.map_type = 0
+        self.graph_surface = None
+        self.last_graph_len = 0
 
     @staticmethod
     def get_screen_sizes():
@@ -203,41 +205,43 @@ class UI:
         self.screen.blit(surface, (self.sidebar_w, self.sidebar_h))
 
     def draw_plants(self):
-        if self.sim.env.plants:
-            for plant in self.sim.env.plants:
-                self.draw_plant(plant)
+        if not self.sim.env.plants:
+            return
 
-    def draw_plant(self, plant):
-        x = plant.x * self.cell_width + self.sidebar_w
-        y = plant.y * self.cell_height + self.sidebar_h
-        scale = self.cell_width
+        plant_surface = pygame.Surface((self.env_window_width, self.env_window_height), pygame.SRCALPHA)
 
-        plant_height = max(2, int(scale * 0.6 * plant.height / 3))
-        plant_width = max(1, int(scale * 0.2))
+        for plant in self.sim.env.plants:
+            px = int(plant.x * self.cell_width)
+            py = int(plant.y * self.cell_height)
 
-        if plant.stress > 0.7:
-            color = (101, 67, 33)
-        elif plant.stress > 0.4:
-            t = (plant.stress - 0.4) / 0.3
-            color = self.sim.interpolate_color((180, 160, 30), (101, 67, 33), t)  # yellow -> brown
-        elif plant.wet < 0.3:
-            t = plant.wet / 0.3
-            color = self.sim.interpolate_color((180, 160, 30), (34, 120, 30), t)  # yellow -> green
-        else:
-            g = int(90 + plant.wet * 80)
-            color = (20, g, 20)
+            plant_height = max(2, int(self.cell_width * 0.6 * plant.height / 3))
+            plant_width = max(1, int(self.cell_width * 0.2))
 
-        stem_x = x + plant_width // 2
-        pygame.draw.rect(self.screen, color, (stem_x, y - plant_height, plant_width, plant_height))
+            if plant.stress > 0.7:
+                color = (101, 67, 33)
+            elif plant.stress > 0.4:
+                t = (plant.stress - 0.4) / 0.3
+                color = self.sim.interpolate_color((180, 160, 30), (101, 67, 33), t)
+            elif plant.wet < 0.3:
+                t = plant.wet / 0.3
+                color = self.sim.interpolate_color((180, 160, 30), (34, 120, 30), t)
+            else:
+                color = (20, int(90 + plant.wet * 80), 20)
 
-        if plant.stress < 0.7:
-            leaf_size = max(1, int(plant_width * 1.5))
-            leaf_y = y - int(plant_height * 0.6)
-            pygame.draw.ellipse(self.screen, color, (stem_x - leaf_size, leaf_y, leaf_size, leaf_size // 2))
-            pygame.draw.ellipse(self.screen, color, (stem_x + plant_width, leaf_y, leaf_size, leaf_size // 2))
+            stem_x = px + plant_width // 2
+            pygame.draw.rect(plant_surface, color, (stem_x, py - plant_height, plant_width, plant_height))
 
-        if plant.wet > 0.7 and plant.stress < 0.2:
-            pygame.draw.circle(self.screen, (100, 220, 100), (stem_x, y - plant_height), max(1, plant_width // 2))
+            if plant.stress < 0.7:
+                leaf_size = max(1, int(plant_width * 1.5))
+                leaf_y = py - int(plant_height * 0.6)
+                pygame.draw.rect(plant_surface, color, (stem_x - leaf_size, leaf_y, leaf_size, leaf_size // 2))
+                pygame.draw.rect(plant_surface, color, (stem_x + plant_width, leaf_y, leaf_size, leaf_size // 2))
+
+            if plant.wet > 0.7 and plant.stress < 0.2:
+                pygame.draw.circle(plant_surface, (100, 220, 100), (stem_x, py - plant_height),
+                                   max(1, plant_width // 2))
+
+        self.screen.blit(plant_surface, (self.sidebar_w, self.sidebar_h))
 
     @staticmethod
     def color_for_cell(cell):
@@ -404,6 +408,20 @@ class UI:
             y = BOTTOM - frac * H
             pygame.draw.line(graph, GRAY25, (LEFT, y), (RIGHT, y), 1)
 
+    def draw_population_graph(self):
+        graph_width = 500
+        graph_height = 300
+        graph_x = self.screen_w - graph_width - 10
+        graph_y = self.screen_h - graph_height - 10
+
+        graph_surface = pygame.Surface((graph_width, graph_height))
+        margins = [10, 10, 10, 10]
+
+        population_data = self.sim.population_history
+
+        self.draw_line_graph(population_data, graph_surface, margins)
+        self.screen.blit(graph_surface, (graph_x, graph_y))
+
     @staticmethod
     def dist_to_text(value, is_percent, u):
         if is_percent:
@@ -412,7 +430,6 @@ class UI:
             return f"{value / u:.2f}"
 
     def draw_side_menu(self):
-        self.sim.l_strength = self.sim.l_strength / 2
         rect = pygame.Rect(0, 0, self.screen_w, self.sidebar_h)
         pygame.draw.rect(self.screen, self.sim.light, rect)
 
@@ -442,20 +459,6 @@ class UI:
 
         if self.show_graph:
             self.draw_population_graph()
-
-    def draw_population_graph(self):
-        graph_width = 500
-        graph_height = 300
-        graph_x = self.screen_w - graph_width - 10
-        graph_y = self.screen_h - graph_height - 10
-
-        graph_surface = pygame.Surface((graph_width, graph_height))
-        margins = [10, 10, 10, 10]
-
-        population_data = self.sim.population_history
-
-        self.draw_line_graph(population_data, graph_surface, margins)
-        self.screen.blit(graph_surface, (graph_x, graph_y))
 
     @staticmethod
     def average_colors(colors):

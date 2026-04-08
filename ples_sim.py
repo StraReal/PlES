@@ -92,7 +92,7 @@ class Sim:
 
         if not any(e in self.active_events for e in ("glaciation", "heatwave", "rain")) and random.random() < 0.0001:
                 duration = random.randint(3500, 8000)
-                self.active_events["heatwave"] = duration
+                self.active_events["glaciation"] = duration
                 print(f"Heatwave started, lasting {duration} ticks")
 
         #tick down active events

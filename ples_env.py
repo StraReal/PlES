@@ -128,11 +128,11 @@ class Env:
                 cell["tempDrift"] = cell["tempDrift"] - 0.002
             if heatwave:
                 recharge *= 0.3
-                cell["tempDrift"] = cell["tempDrift"] + 0.003
+                cell["tempDrift"] = cell["tempDrift"] + 0.004
             if glaciation:
                 recharge *= 0.7
                 cell["tempDrift"] = cell["tempDrift"] - 0.006
-            cell["tempDrift"] = cell["tempDrift"] * 0.98
+            cell["tempDrift"] = cell["tempDrift"] * 0.99
 
 
             cell["waterUnder"] = min(1.0, cell["waterUnder"] + recharge)
