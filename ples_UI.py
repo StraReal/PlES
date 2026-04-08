@@ -14,10 +14,12 @@ def unpair(z):
 class UI:
     def __init__(self, sim=None, env_width=1, env_height=1,_s_w=1,_s_h=1,_world_type=None):
         self.sim=sim
-        if sim is not None:
-            self.cells = sim.env.cells
         self.rows = env_height
         self.cols = env_width
+        if sim is not None:
+            self.cells = sim.env.cells
+            self.color_array = np.zeros((self.rows, self.cols, 3), dtype=np.uint8)
+            self.rebuild_color_array()
         self.env_window_width=_s_w
         self.env_window_height=_s_h
         self.cell_width = _s_w // self.cols
@@ -158,18 +160,15 @@ class UI:
             pygame.display.flip()
         return result
 
-    def draw_world(self):
+    def rebuild_color_array(self):
         for y in range(self.rows):
             for x in range(self.cols):
-                cell = self.cells[y][x]
-                color = self.color_for_cell(cell)
-                rect = pygame.Rect(
-                    x * self.cell_width + self.sidebar_w,
-                    y * self.cell_height + self.sidebar_h,
-                    self.cell_width,
-                    self.cell_height
-                )
-                pygame.draw.rect(self.screen, color, rect)
+                self.color_array[y, x] = self.color_for_cell(self.cells[y][x])
+
+    def draw_world(self):
+        surface = pygame.surfarray.make_surface(self.color_array.transpose(1, 0, 2))
+        surface = pygame.transform.scale(surface, (self.env_window_width, self.env_window_height))
+        self.screen.blit(surface, (self.sidebar_w, self.sidebar_h))
         self.draw_plants()
         self.draw_global_light(self.sim.light, self.sim.l_strength)
 

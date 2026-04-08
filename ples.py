@@ -23,12 +23,15 @@ else:
     ui = UI(sim, env_width=sim.world_w, env_height=sim.world_h, _s_w=1500, _s_h=999, _world_type='continental')
 
 try:
+    sim_accumulator = 0
+    SIM_INTERVAL = 1000 / 12
     while True:
-        start_time = time.perf_counter()
+        dt = clock.tick(60)
+        sim_accumulator += dt
         ui.detect_events()
-        sim.run()
+        if sim_accumulator >= SIM_INTERVAL:
+            sim.run()
+            sim_accumulator -= SIM_INTERVAL
         ui.update()
-        elapsed_time = (time.perf_counter() - start_time) * 1000
-        clock.tick(60)
 except KeyboardInterrupt:
     print("Quit with Ctrl+C")
