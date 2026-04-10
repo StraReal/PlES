@@ -27,7 +27,7 @@ class Env:
             self.limits = [-0.2, -0.1, 0.35]
         self.cells = self.generate_environment()
         self.plants = []
-        self.luminosity = 1.0
+        self.dirty = False
 
     def generate_environment(self):
         noise = PerlinNoise(self.octaves, self.seed)
@@ -105,10 +105,7 @@ class Env:
         else:
             return "mountain", False
 
-    def update_luminosity(self, luminosity):
-        self.luminosity = luminosity
-
-    def random_tick(self, positions, active_events):
+    def random_tick(self, positions, active_events, luminosity):
         if active_events is None:
             active_events = {}
 
@@ -125,26 +122,32 @@ class Env:
 
             if rain:
                 recharge *= 4.0
-                cell["tempDrift"] = cell["tempDrift"] - 0.002
+                cell["tempDrift"] = cell["tempDrift"] - 0.0015
+                self.dirty = True
             if heatwave:
                 recharge *= 0.3
                 cell["tempDrift"] = cell["tempDrift"] + 0.004
+                self.dirty = True
             if glaciation:
                 recharge *= 0.7
                 cell["tempDrift"] = cell["tempDrift"] - 0.006
-            cell["tempDrift"] = cell["tempDrift"] * 0.99
-
+                self.dirty = True
+            if abs(cell["tempDrift"])>0.02:
+                cell["tempDrift"] = cell["tempDrift"] * 0.99
+                self.dirty = True
 
             cell["waterUnder"] = min(1.0, cell["waterUnder"] + recharge)
 
-            if cell["grass"] and (random.uniform(0, cell["waterUnder"]) > 0.3 or random.random() > 0.99) and (random.uniform(0, self.luminosity) > 0.2):
+            if cell["grass"] and (random.uniform(0, cell["waterUnder"]) > 0.3 or random.random() > 0.99) and (random.uniform(0, luminosity) > 0.2):
                 exx = random.randint(-1, 1)
                 exy = 0
                 if not exx:
                     exy = random.choice([-1, 1])
                 nx, ny = x + exx, y + exy
                 if 0 <= nx < self.width and 0 <= ny < self.height:
-                    self.cells[ny][nx]["grass"] = True
+                    if not self.cells[ny][nx]["grass"]:
+                        self.cells[ny][nx]["grass"] = True
+                        self.dirty = True
                 if random.random() < 0.0001:
                     self.create_plant(x=x, y=y, add_to_world=True)
 
@@ -154,7 +157,7 @@ class Env:
         tick_set = set(id(p) for p in tick_plants)
         alive = [p for p in self.plants if id(p) not in tick_set]
         for plant in tick_plants:
-            if plant.update(self.luminosity, tick_rate=4.5):
+            if plant.update(luminosity, tick_rate=4.5):
                 alive.append(plant)
                 if random.random() < 0.001:
                     new_plants.extend(plant.produce_seeds())

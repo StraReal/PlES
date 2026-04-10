@@ -1,7 +1,6 @@
 import pygame
 from ples_UI import UI
 from ples_sim import Sim
-import time
 
 starting_ui = UI()
 clock = pygame.time.Clock()

@@ -13,12 +13,12 @@ class Sim:
         self.time = 72
         self.day = 0
         self.worldType=_world_type
+        self.active_events = {}
         self.light, self.l_strength = self.get_sky_color(self.time)
         self.l_strength = self.l_strength / 2
         self.luminosity = self.rgb_into_luminosity(self.light)
         self.plant_id_counts = {}
         self.population_history = deque(maxlen=100)
-        self.active_events = {}
 
     @staticmethod
     def interpolate_color(color1, color2, t):
@@ -62,11 +62,12 @@ class Sim:
         self.light, self.l_strength = self.get_sky_color(self.time)
         self.l_strength = self.l_strength / 2
         self.luminosity = self.rgb_into_luminosity(self.light)
-        self.env.update_luminosity(self.luminosity)
         l = int(self.env.width * self.env.height * 0.05)
         positions = [(random.randint(0, self.env.width - 1), random.randint(0, self.env.height - 1)) for _ in range(l)]
         self.tick_events()
-        self.env.random_tick(positions, self.active_events)
+
+        self.env.random_tick(positions, self.active_events, self.luminosity)
+
         if not self.time % 10:
             self.plant_id_counts = {}
             for plant in self.env.plants:
@@ -75,12 +76,12 @@ class Sim:
                 else:
                     self.plant_id_counts[plant.fam_id] = 1
             self.population_history.append(self.plant_id_counts.copy())
+
         self.time += 1
         self.day = self.time % 480
 
     def tick_events(self):
-        # trigger events randomly
-        if not any(e in self.active_events for e in "rain") and random.random() < 0.001:
+        if not any(e in self.active_events for e in "rain") and random.random() < 0.0007:
             duration = random.randint(200, 800)
             self.active_events["rain"] = duration
             print(f"Rain started, lasting {duration} ticks")
@@ -91,7 +92,7 @@ class Sim:
                 print(f"Heatwave started, lasting {duration} ticks")
 
         if not any(e in self.active_events for e in ("glaciation", "heatwave", "rain")) and random.random() < 0.0001:
-                duration = random.randint(3500, 8000)
+                duration = random.randint(400, 1300)
                 self.active_events["glaciation"] = duration
                 print(f"Heatwave started, lasting {duration} ticks")
 

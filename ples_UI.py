@@ -51,8 +51,6 @@ class UI:
         self.family_first_seen = {}
         self.family_order = []
         self.map_type = 0
-        self.graph_surface = None
-        self.last_graph_len = 0
 
     @staticmethod
     def get_screen_sizes():
@@ -210,34 +208,38 @@ class UI:
 
         plant_surface = pygame.Surface((self.env_window_width, self.env_window_height), pygame.SRCALPHA)
 
+        # Precompute common values
+        cell_width = self.cell_width
+        cell_height = self.cell_height
+        plant_width = max(1, int(cell_width * 0.1))
+        leaf_size = max(1, int(plant_width * 1.2))
+
         for plant in self.sim.env.plants:
-            px = int(plant.x * self.cell_width)
-            py = int(plant.y * self.cell_height)
+            px = int(plant.x * cell_width)
+            py = int(plant.y * cell_height)
 
-            plant_height = max(2, int(self.cell_width * 0.6 * plant.height / 3))
-            plant_width = max(1, int(self.cell_width * 0.2))
+            plant_height = max(2, int(cell_width * 0.4 * plant.height / 3))
+            stem_x = px + plant_width // 2
 
+            # Simplified color determination
             if plant.stress > 0.7:
                 color = (101, 67, 33)
-            elif plant.stress > 0.4:
-                t = (plant.stress - 0.4) / 0.3
-                color = self.sim.interpolate_color((180, 160, 30), (101, 67, 33), t)
             elif plant.wet < 0.3:
-                t = plant.wet / 0.3
-                color = self.sim.interpolate_color((180, 160, 30), (34, 120, 30), t)
+                color = (34, 120, 30)
             else:
-                color = (20, int(90 + plant.wet * 80), 20)
+                color = (20, 170, 20)
 
-            stem_x = px + plant_width // 2
+            # Draw stem
             pygame.draw.rect(plant_surface, color, (stem_x, py - plant_height, plant_width, plant_height))
 
             if plant.stress < 0.7:
-                leaf_size = max(1, int(plant_width * 1.5))
                 leaf_y = py - int(plant_height * 0.6)
+                # Draw leaves
                 pygame.draw.rect(plant_surface, color, (stem_x - leaf_size, leaf_y, leaf_size, leaf_size // 2))
                 pygame.draw.rect(plant_surface, color, (stem_x + plant_width, leaf_y, leaf_size, leaf_size // 2))
 
             if plant.wet > 0.7 and plant.stress < 0.2:
+                # Draw water droplet
                 pygame.draw.circle(plant_surface, (100, 220, 100), (stem_x, py - plant_height),
                                    max(1, plant_width // 2))
 
@@ -293,7 +295,6 @@ class UI:
                 self.species_base_colors[s] = base
             else:
                 base = self.species_base_colors[s]
-            # Darken slightly for each new family within species
             fam_index = species_families[s].index(fid)
             factor = max(0.4, 1.0 - fam_index * 0.15)
             color = tuple(int(c * factor) for c in base)
@@ -483,6 +484,9 @@ class UI:
 
     def update(self):
         if self.sim is not None:
+            if self.sim.env.dirty:
+                self.rebuild_color_array()
+                self.sim.env.dirty = False
             self.screen.fill(self.sim.interpolate_color(self.sim.light, (255,255,255),0.2))
             self.draw_world()
             if self.map_type==1:
@@ -498,6 +502,8 @@ class UI:
                     sys.exit()
                 elif event.key == pygame.K_s:
                     self.map_type=(self.map_type+1)%2
+                elif event.key == pygame.K_d:
+                    self.show_graph=not self.show_graph
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.handle_click(event)
 
